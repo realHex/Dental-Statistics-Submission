@@ -71,7 +71,7 @@ const Home = () => {
           className={`tab-btn ${activeTab === 'past' ? 'active' : ''}`} 
           onClick={() => setActiveTab('past')}
         >
-          Past Data
+          Monthly Data
         </button>
       </div>
 
