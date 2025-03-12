@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { DentalStatistics } from '../types';
 import { User } from '@supabase/supabase-js';
 import SuccessPopup from './SuccessPopup';
+import { excelService } from '../services/excelService';
 
 interface SubmitDataTabProps {
   user: User | null;
@@ -14,6 +15,7 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [userName, setUserName] = useState<string>("");
   
   // Initial state for form fields
   const initialFormState = {
@@ -43,24 +45,33 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
     if (user) {
       // Check if there is already data for the selected date
       fetchExistingData();
+      fetchUserName();
     }
   }, [user, date]);
 
   const fetchExistingData = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('dental_statistics')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', date)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('dental_statistics')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', date)
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record exists
 
-    if (error) {
-      console.log('No existing data for this date');
-      // Reset form data if no record exists
-      setFormData(initialFormState);
-    } else {
+      if (error) {
+        console.error('Error fetching data:', error);
+        setFormData(initialFormState);
+        return;
+      }
+      
+      if (!data) {
+        console.log('No existing data for this date');
+        setFormData(initialFormState);
+        return;
+      }
+
       console.log('Found existing data:', data);
       // Load existing data into form
       const {
@@ -71,6 +82,31 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
         ...statistics
       } = data;
       setFormData(statistics);
+    } catch (err) {
+      console.error('Unexpected error during data fetch:', err);
+      setFormData(initialFormState);
+    }
+  };
+
+  const fetchUserName = async () => {
+    if (!user) return;
+
+    // First try to get the name from auth metadata
+    const userName = user.user_metadata?.full_name;
+    if (userName) {
+      setUserName(userName);
+      return;
+    }
+
+    // If not in metadata, try from the profiles table
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('name')
+      .eq('id', user.id)
+      .single();
+
+    if (!error && data) {
+      setUserName(data.name);
     }
   };
 
@@ -91,14 +127,21 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
 
     try {
       // Check if a record already exists for this date
-      const { data: existingRecord } = await supabase
+      const { data: existingRecord, error: findError } = await supabase
         .from('dental_statistics')
         .select('id')
         .eq('user_id', user.id)
         .eq('date', date)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single()
+        
+      if (findError) {
+        console.error('Error checking for existing record:', findError);
+        throw findError;
+      }
 
       let result;
+      let savedData: DentalStatistics | null = null;
+      
       if (existingRecord) {
         // Update existing record
         result = await supabase
@@ -107,7 +150,12 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
             ...formData,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', existingRecord.id);
+          .eq('id', existingRecord.id)
+          .select();
+          
+        if (result.data && result.data.length > 0) {
+          savedData = result.data[0] as DentalStatistics;
+        }
       } else {
         // Create new record
         result = await supabase
@@ -118,11 +166,36 @@ const SubmitDataTab: React.FC<SubmitDataTabProps> = ({ user }) => {
               date,
               ...formData,
             },
-          ]);
+          ])
+          .select();
+          
+        if (result.data && result.data.length > 0) {
+          savedData = result.data[0] as DentalStatistics;
+        }
       }
 
       if (result.error) {
         throw result.error;
+      }
+
+      // Update Excel file after successful database update
+      if (savedData) {
+        const dateObj = new Date(date);
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth() + 1; // JavaScript months are 0-indexed
+        
+        try {
+          await excelService.generateMonthlyExcel(
+            year,
+            month,
+            user.id,
+            userName || 'Unknown User',
+            savedData
+          );
+        } catch (excelError) {
+          console.error('Error updating Excel file:', excelError);
+          // Don't throw here as the database update succeeded
+        }
       }
 
       const successMsg = existingRecord ? 'Statistics updated successfully!' : 'Statistics submitted successfully!';

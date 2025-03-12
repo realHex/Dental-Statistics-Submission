@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { DentalStatistics } from '../types';
+import { excelService } from '../services/excelService';
 
 interface PastDataTabProps {
   user: User | null;
@@ -19,6 +20,7 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [isExcelDownloading, setIsExcelDownloading] = useState<boolean>(false);
 
   const formFields = [
     { id: 'extractions', label: 'Extractions' },
@@ -109,6 +111,22 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
     setSelectedMonth(e.target.value);
   };
 
+  const handleDownloadExcel = async () => {
+    if (!selectedMonth || !user) return;
+    
+    setIsExcelDownloading(true);
+    
+    try {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      await excelService.downloadMonthlyExcel(year, month);
+    } catch (error) {
+      console.error('Failed to download Excel file:', error);
+      setError('Failed to download Excel file. Please try again later.');
+    } finally {
+      setIsExcelDownloading(false);
+    }
+  };
+
   const [year, month] = selectedMonth.split('-').map(Number);
   const daysInMonth = getDaysInMonth(year, month);
   
@@ -117,14 +135,23 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
 
   return (
     <div className="past-data">
-      <div className="month-selector">
-        <label htmlFor="month-year">Select Month:</label>
-        <input
-          type="month"
-          id="month-year"
-          value={selectedMonth}
-          onChange={handleMonthChange}
-        />
+      <div className="month-selector-container">
+        <div className="month-selector">
+          <label htmlFor="month-year">Select Month:</label>
+          <input
+            type="month"
+            id="month-year"
+            value={selectedMonth}
+            onChange={handleMonthChange}
+          />
+        </div>
+        <button 
+          className="download-excel-btn" 
+          onClick={handleDownloadExcel}
+          disabled={isExcelDownloading}
+        >
+          {isExcelDownloading ? 'Downloading...' : 'Download Excel'}
+        </button>
       </div>
 
       {isLoading ? (
