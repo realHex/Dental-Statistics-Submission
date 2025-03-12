@@ -75,6 +75,43 @@ button:disabled {
   border-radius: 4px;
 }
 
+/* Password visibility toggle */
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  flex: 1;
+  padding-right: 40px; /* Make space for the toggle button */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.password-toggle:hover {
+  background-color: transparent;
+}
+
+.password-toggle:focus {
+  outline: none;
+}
+
 /* Home Page */
 .home-container {
   max-width: 900px;
