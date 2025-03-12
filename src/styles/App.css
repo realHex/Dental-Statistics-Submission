@@ -300,9 +300,8 @@ p {
 }
 
 .month-selector-container {
+  /* Update the container styling now that it only contains the month selector */
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1.5rem;
 }
 
@@ -322,16 +321,7 @@ p {
   border-radius: 4px;
 }
 
-.download-excel-btn {
-  background-color: #28a745;
-  padding: 0.6rem 1rem;
-  width: auto;
-  font-size: 0.9rem;
-}
-
-.download-excel-btn:hover:not(:disabled) {
-  background-color: #218838;
-}
+/* Remove the download-excel-btn styles since the button has been removed */
 
 .loading {
   text-align: center;
@@ -374,4 +364,124 @@ p {
 .total-value {
   font-weight: bold;
   background-color: #e9f7ef;
+}
+
+/* Admin Tab Styles */
+.admin-tab h2 {
+  margin-bottom: 0.5rem;
+}
+
+.admin-description {
+  margin-bottom: 1.5rem;
+  color: #666;
+  font-style: italic;
+}
+
+.admin-badge {
+  display: inline-block;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+.admin-tab-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.admin-tab-btn:hover {
+  background-color: #c82333;
+}
+
+.admin-tab-btn.active {
+  background-color: white;
+  color: #dc3545;
+  border-bottom-color: white;
+}
+
+.admin-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Fix the user-selector-container to have label on the left */
+.user-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-selector-container label {
+  font-weight: bold;
+}
+
+.user-selector-container select {
+  min-width: 200px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.selected-user-title {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.selected-user-name {
+  font-weight: bold;
+  color: #0070f3;
+}
+
+.excel-download-btn {
+  background-color: #28a745;
+  padding: 0.5rem 1rem;
+  width: auto;
+  margin-bottom: 0;
+  height: 38px;
+}
+
+.excel-download-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+/* Excel Download Popup */
+.excel-download-popup h3 {
+  margin-bottom: 1.5rem;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.popup-actions button {
+  flex: 1;
+}
+
+.download-btn {
+  background-color: #28a745;
+}
+
+.download-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: #5a6268;
 }

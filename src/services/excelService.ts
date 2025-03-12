@@ -227,26 +227,35 @@ export const excelService = {
 
     if (daysInMonth === 0) daysInMonth = 31; // Default if not found
     
-    // For each day and parameter, sum across users
-    for (let day = 1; day <= daysInMonth; day++) {
-      const colIndex = day + 1;
-      
-      // For each parameter row
-      for (let paramRow = 4; paramRow <= 21; paramRow++) {
-        let sum = 0;
+    // Initialize daily totals matrix [parameter][day]
+    const dailyTotals: number[][] = Array(22).fill(0).map(() => Array(daysInMonth + 1).fill(0));
+    
+    // Process all user worksheets except the Total sheet
+    workbook.worksheets.forEach(sheet => {
+      if (sheet.name !== 'Total') { // Skip the totals sheet
+        console.log(`Processing sheet: ${sheet.name}`);
         
-        // Add values from all user sheets
-        users.forEach(user => {
-          const sheet = workbook.getWorksheet(user.name);
-          if (sheet) {
-            const value = sheet.getCell(paramRow, colIndex).value;
-            if (typeof value === 'number') {
-              sum += value;
+        // For each parameter row (4 to 21)
+        for (let paramRow = 4; paramRow <= 21; paramRow++) {
+          // For each day (1 to daysInMonth)
+          for (let day = 1; day <= daysInMonth; day++) {
+            const colIndex = day + 1; // +1 because first column is parameter names
+            const cellValue = sheet.getCell(paramRow, colIndex).value;
+            
+            // Add to dailyTotals if it's a number
+            if (typeof cellValue === 'number') {
+              dailyTotals[paramRow][day] += cellValue;
             }
           }
-        });
-        
-        totalsSheet.getCell(paramRow, colIndex).value = sum;
+        }
+      }
+    });
+    
+    // Write totals to the totals sheet
+    for (let paramRow = 4; paramRow <= 21; paramRow++) {
+      for (let day = 1; day <= daysInMonth; day++) {
+        const colIndex = day + 1;
+        totalsSheet.getCell(paramRow, colIndex).value = dailyTotals[paramRow][day];
       }
     }
 
@@ -286,7 +295,19 @@ export const excelService = {
         .download(`monthly/${fileName}`);
 
       if (error) {
-        throw new Error(`Failed to download Excel file: ${error.message}`);
+        // Fix: Remove the reference to error.status which doesn't exist on StorageError
+        // Just check for empty message or error object instead
+        if (error.message === "" || !Object.keys(error).length || 
+            // Check the error message for common 404 phrases
+            error.message.includes('not found') || error.message.includes('does not exist')) {
+          throw new Error(`No excel sheet exists for the month selected.`);
+        } else {
+          throw new Error(`No excel sheet exists for the month selected.`);
+        }
+      }
+
+      if (!data) {
+        throw new Error(`No excel sheet exists for the month selected.`);
       }
 
       saveAs(new Blob([data], { type: 'application/octet-stream' }), fileName);

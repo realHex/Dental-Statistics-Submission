@@ -22,3 +22,11 @@ export interface DentalStatistics {
   inward_patients: number;
   created_at?: string;
 }
+
+export type UserRole = 'user' | 'admin';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  role?: UserRole;
+}

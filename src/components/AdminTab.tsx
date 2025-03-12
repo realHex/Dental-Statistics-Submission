@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import { DentalStatistics } from '../types';
+import { DentalStatistics, UserProfile } from '../types';
+import ExcelDownloadPopup from './ExcelDownloadPopup';
 
-interface PastDataTabProps {
+interface AdminTabProps {
   user: User | null;
 }
 
@@ -11,14 +12,19 @@ interface MonthlyData {
   [day: number]: DentalStatistics;
 }
 
-const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+const AdminTab: React.FC<AdminTabProps> = ({ user }) => {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
+  const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(true);
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyData>({});
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [showExcelPopup, setShowExcelPopup] = useState(false);
 
   const formFields = [
     { id: 'extractions', label: 'Extractions' },
@@ -41,38 +47,68 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
     { id: 'inward_patients', label: 'Inward Patients' },
   ];
 
+  // Fetch all users when component mounts
   useEffect(() => {
-    if (user) {
-      fetchMonthlyData();
-    }
-  }, [user, selectedMonth]);
+    fetchUsers();
+  }, []);
 
-  const fetchMonthlyData = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
+  // Fetch data for selected user and month
+  useEffect(() => {
+    if (selectedUserId) {
+      fetchUserData();
+    }
+  }, [selectedUserId, selectedMonth]);
+
+  const fetchUsers = async () => {
+    setIsLoadingUsers(true);
     setError(null);
     
-    const [year, month] = selectedMonth.split('-');
-    const startDate = `${year}-${month}-01`;
-    
-    // Calculate end date (last day of the month)
-    const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
-    const nextMonthYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-    const endDate = `${nextMonthYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
     try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+
+      setUsers(data || []);
+      
+      if (data && data.length > 0) {
+        setSelectedUserId(data[0].id);
+        setSelectedUserName(data[0].name);
+      }
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err.message || 'Failed to fetch users');
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const fetchUserData = async () => {
+    if (!selectedUserId) return;
+    
+    setIsLoadingData(true);
+    setError(null);
+    
+    try {
+      const [year, month] = selectedMonth.split('-');
+      const startDate = `${year}-${month}-01`;
+      
+      // Calculate end date (last day of the month)
+      const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+      const nextMonthYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+      const endDate = `${nextMonthYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
       const { data, error } = await supabase
         .from('dental_statistics')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', selectedUserId)
         .gte('date', startDate)
         .lt('date', endDate)
         .order('date');
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const dataByDay: MonthlyData = {};
       
@@ -86,11 +122,26 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
       
       setMonthlyData(dataByDay);
     } catch (err: any) {
-      console.error('Error fetching monthly data:', err);
+      console.error('Error fetching user data:', err);
       setError(err.message || 'Failed to fetch data');
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
+  };
+
+  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const userId = e.target.value;
+    setSelectedUserId(userId);
+    
+    // Update selected user name
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserName(user.name);
+    }
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedMonth(e.target.value);
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -105,36 +156,62 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
     return total;
   };
 
-  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedMonth(e.target.value);
-  };
-
+  // Generate array of days for table headers
   const [year, month] = selectedMonth.split('-').map(Number);
   const daysInMonth = getDaysInMonth(year, month);
-  
-  // Generate array of days for table headers
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="past-data">
-      <div className="month-selector-container">
+    <div className="admin-tab">
+      <h2>Admin Dashboard</h2>
+      <p className="admin-description">View statistics for all users</p>
+      
+      <div className="admin-controls">
+        <div className="user-selector-container">
+          <label htmlFor="user-select">User:</label>
+          <select 
+            id="user-select"
+            value={selectedUserId}
+            onChange={handleUserChange}
+            disabled={isLoadingUsers || isLoadingData}
+          >
+            {users.map(user => (
+              <option key={user.id} value={user.id}>{user.name}</option>
+            ))}
+          </select>
+        </div>
+        
         <div className="month-selector">
-          <label htmlFor="month-year">Select Month:</label>
+          <label htmlFor="admin-month">Month:</label>
           <input
             type="month"
-            id="month-year"
+            id="admin-month"
             value={selectedMonth}
             onChange={handleMonthChange}
+            disabled={isLoadingData}
           />
         </div>
+        
+        <button 
+          className="excel-download-btn" 
+          onClick={() => setShowExcelPopup(true)}
+          disabled={isLoadingUsers || isLoadingData}
+        >
+          Download Excel
+        </button>
       </div>
 
-      {isLoading ? (
-        <div className="loading">Loading data...</div>
+      {isLoadingUsers ? (
+        <div className="loading">Loading users...</div>
       ) : error ? (
         <div className="error-message">{error}</div>
+      ) : isLoadingData ? (
+        <div className="loading">Loading data...</div>
       ) : (
         <div className="table-container">
+          <h3 className="selected-user-title">
+            Data for: <span className="selected-user-name">{selectedUserName}</span>
+          </h3>
           <table className="data-table">
             <thead>
               <tr>
@@ -163,8 +240,12 @@ const PastDataTab: React.FC<PastDataTabProps> = ({ user }) => {
           </table>
         </div>
       )}
+
+      {showExcelPopup && (
+        <ExcelDownloadPopup onClose={() => setShowExcelPopup(false)} />
+      )}
     </div>
   );
 };
 
-export default PastDataTab;
+export default AdminTab;
