@@ -172,3 +172,170 @@ p {
   text-align: center;
   margin-top: 1rem;
 }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  border-bottom: none;
+  border-radius: 0.25rem 0.25rem 0 0;
+  cursor: pointer;
+  margin-right: 0.25rem;
+  width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+.tab-btn.active {
+  background-color: white;
+  border-bottom: 2px solid white;
+  color: #0070f3;
+}
+
+.tab-btn.active:hover {
+  background-color: white;
+  color: #0051a8;
+}
+
+.tab-content {
+  background-color: white;
+  border-radius: 0 0.25rem 0.25rem 0.25rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.submit-btn, 
+.reset-btn {
+  flex: 1;
+}
+
+.reset-btn {
+  background-color: #6c757d;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+/* Success Popup */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.popup {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.popup-content {
+  margin-bottom: 1.5rem;
+}
+
+.popup-icon {
+  font-size: 3rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.close-btn {
+  width: 50%;
+  margin: 0 auto;
+}
+
+/* Past Data Tab */
+.past-data {
+  padding: 1rem 0;
+}
+
+.month-selector {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-selector label {
+  font-weight: bold;
+}
+
+.month-selector input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+}
+
+.data-table th, 
+.data-table td {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.data-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.field-name {
+  text-align: left;
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.total-column {
+  background-color: #e9f7ef;
+}
+
+.total-value {
+  font-weight: bold;
+  background-color: #e9f7ef;
+}
