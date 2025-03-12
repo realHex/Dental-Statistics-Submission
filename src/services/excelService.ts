@@ -289,43 +289,37 @@ export const excelService = {
       const monthStr = String(month).padStart(2, '0');
       const fileName = `dental_statistics_${year}-${monthStr}.xlsx`;
 
-      // First, check if the bucket exists
-      const { error: bucketError } = await supabase
-        .storage
-        .getBucket('excel-reports');
-
-      if (bucketError) {
-        console.error('Storage bucket does not exist:', bucketError);
-        throw new Error('No excel sheet exists for the month selected. Storage not configured correctly.');
-      }
-
-      // Then attempt to download the file
+      // Skip the bucket check that fails in production
+      // Go directly to the download attempt
       const { data, error } = await supabase
         .storage
         .from('excel-reports')
         .download(`monthly/${fileName}`);
 
-      // Handle specific error cases
       if (error) {
         console.error('Download error details:', error);
         
-        // For 400 Bad Request errors, likely the file doesn't exist
-        if (error.message && error.message.includes('400')) {
-          throw new Error(`No excel sheet exists for the month selected.`);
-        }
-        
-        // For any other errors
-        throw new Error(`Unable to download file: ${error.message || 'Unknown error'}`);
+        // More user friendly message that doesn't mention storage configuration
+        throw new Error(`No Excel report available for the selected month.`);
       }
 
       if (!data) {
-        throw new Error(`No excel sheet exists for the month selected.`);
+        throw new Error(`No Excel report available for the selected month.`);
       }
 
       saveAs(new Blob([data], { type: 'application/octet-stream' }), fileName);
     } catch (error) {
       console.error('Error downloading Excel file:', error);
-      throw error;
+      // Provide a clean error message regardless of the underlying issue
+      if (error instanceof Error) {
+        if (error.message.includes('Storage bucket does not exist') ||
+            error.message.includes('Bucket not found')) {
+          throw new Error(`Excel reports are not available yet. Please try again later.`);
+        }
+        throw error;
+      } else {
+        throw new Error(`No Excel report available for the selected month.`);
+      }
     }
   }
 };

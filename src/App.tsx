@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Home from './components/Home';
 import './styles/App.css';
+import { Analytics } from "@vercel/analytics/react"
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, isLoading } = useAuth();
@@ -16,6 +17,8 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  <Analytics />
   
   return children;
 };
