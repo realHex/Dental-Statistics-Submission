@@ -52,7 +52,7 @@ const Home = () => {
     <div className="home-container">
       <div className="header">
         <div>
-          <h1>Dental Statistics Submission</h1>
+          <h1>Monthly Return of Hospital - OPD Dental Clinic</h1>
           {userName && <p className="welcome-message">Welcome, {userName}!</p>}
         </div>
         <button onClick={handleLogout} className="logout-btn">
