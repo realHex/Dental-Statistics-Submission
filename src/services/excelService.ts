@@ -289,21 +289,33 @@ export const excelService = {
       const monthStr = String(month).padStart(2, '0');
       const fileName = `dental_statistics_${year}-${monthStr}.xlsx`;
 
+      // First, check if the bucket exists
+      const { error: bucketError } = await supabase
+        .storage
+        .getBucket('excel-reports');
+
+      if (bucketError) {
+        console.error('Storage bucket does not exist:', bucketError);
+        throw new Error('No excel sheet exists for the month selected. Storage not configured correctly.');
+      }
+
+      // Then attempt to download the file
       const { data, error } = await supabase
         .storage
         .from('excel-reports')
         .download(`monthly/${fileName}`);
 
+      // Handle specific error cases
       if (error) {
-        // Fix: Remove the reference to error.status which doesn't exist on StorageError
-        // Just check for empty message or error object instead
-        if (error.message === "" || !Object.keys(error).length || 
-            // Check the error message for common 404 phrases
-            error.message.includes('not found') || error.message.includes('does not exist')) {
-          throw new Error(`No excel sheet exists for the month selected.`);
-        } else {
+        console.error('Download error details:', error);
+        
+        // For 400 Bad Request errors, likely the file doesn't exist
+        if (error.message && error.message.includes('400')) {
           throw new Error(`No excel sheet exists for the month selected.`);
         }
+        
+        // For any other errors
+        throw new Error(`Unable to download file: ${error.message || 'Unknown error'}`);
       }
 
       if (!data) {
