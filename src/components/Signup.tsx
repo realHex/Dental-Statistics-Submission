@@ -89,7 +89,7 @@ const Signup = () => {
               onClick={() => setShowPassword(!showPassword)} 
               tabIndex={-1}
             >
-              {showPassword ? "👁️" : "👁️‍🗨️"}
+              {showPassword ? "👁️" : "🔒"}
             </button>
           </div>
         </div>
@@ -109,7 +109,7 @@ const Signup = () => {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               tabIndex={-1}
             >
-              {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+              {showConfirmPassword ? "👁️" : "🔒"}
             </button>
           </div>
         </div>

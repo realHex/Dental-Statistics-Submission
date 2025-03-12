@@ -61,7 +61,7 @@ const Login = () => {
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
             >
-              {showPassword ? "👁️" : "👁️‍🗨️"}
+              {showPassword ? "👁️" : "🔒"}
             </button>
           </div>
         </div>
